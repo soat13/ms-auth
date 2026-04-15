@@ -16,12 +16,11 @@ jobs:
         image: amazon/dynamodb-local
         ports:
           - "8000:8000"
-        healthcheck:
-          test: [ "CMD", "curl", "-X", "GET", "http://localhost:8000/shell" ]
-          interval: 5s
-          timeout: 5s
-          retries: 10
-          start_period: 5s
+        options: >-
+          --health-cmd="curl -X GET http://localhost:8000/shell"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
 
     steps:
       - name: Checkout code

@@ -27,7 +27,6 @@ done
 USER_ID="00000000-0000-0000-0000-000000000001"
 USER_EMAIL="test@oficina.dev"
 # bcrypt hash of: TestPass123!  (cost 10)
-USER_PASSWORD='$2a$10$q4dJrWra4kmBnGIAp8fb2.0cpWagfwS1xG3CJD4JigZNrq/Opw1Xy'
 
 echo "==> Region : $REGION"
 echo "==> Table  : $TABLE_NAME"

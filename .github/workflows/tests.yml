@@ -10,26 +10,6 @@ jobs:
   tests-and-quality:
     name: Tests & Quality
     runs-on: ubuntu-latest
-    env:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: oficina
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
-    services:
-      db:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: oficina
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=20
 
     steps:
       - name: Checkout code
@@ -46,18 +26,13 @@ jobs:
       - name: Download dependencies
         run: go mod download
 
-      - name: Create .env.testing
-        run: |
-          cat <<EOF > .env.testing
-          PG_DSN=postgres://postgres:postgres@127.0.0.1:5432/oficina?sslmode=disable
-          MIGRATIONS_DIR=scripts/db/migrations
-          TEST_SEEDERS_DIR=scripts/db/test_seeders
-          EOF
-
-      - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
-
       - name: Run tests with coverage (unit + integration)
+        env:
+          JWT_SECRET: ${{ secrets.K8S_JWT_SECRET }}
+          DYNAMODB_TABLE: users
+          DYNAMODB_EMAIL_INDEX: email-index
+          AWS_REGION: us-east-1
+          HTTP_PORT: 8090
         run: |
           go test -v \
             -coverpkg=./internal/... \

@@ -1,0 +1,30 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Environment variables
+.env*
+*.env
+
+# Go build artifacts
+bin/
+dist/
+vendor/
+go.work
+go.work.sum
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage.out

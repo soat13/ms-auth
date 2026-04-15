@@ -1,0 +1,38 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml
+    secrets:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  docker-build:
+    needs: tests
+    uses: ./.github/workflows/docker-build.yml
+
+  deploy-ecr:
+    needs: docker-build
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/deploy-ecr.yml
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+
+  deploy-k8s:
+    needs: deploy-ecr
+    if: github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/deploy-k8s.yml
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+      K8S_JWT_SECRET: ${{ secrets.K8S_JWT_SECRET }}

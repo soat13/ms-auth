@@ -1,0 +1,60 @@
+name: Tests
+
+on:
+  workflow_call:
+    secrets:
+      SONAR_TOKEN:
+        required: true
+
+jobs:
+  tests-and-quality:
+    name: Tests & Quality
+    runs-on: ubuntu-latest
+
+    services:
+      dynamodb:
+        image: amazon/dynamodb-local
+        ports:
+          - "8000:8000"
+        options: >-
+          --health-cmd="curl -X GET http://localhost:8000/shell"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.1'
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run tests with coverage (unit + integration)
+        env:
+          JWT_SECRET: ${{ secrets.K8S_JWT_SECRET }}
+          DYNAMODB_TABLE: users
+          DYNAMODB_EMAIL_INDEX: email-index
+          AWS_REGION: us-east-1
+          HTTP_PORT: 8090
+        run: |
+          go test -v \
+            -coverpkg=./internal/... \
+            -coverprofile=coverage.out \
+            ./...
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: >
+            -Dsonar.go.coverage.reportPaths=coverage.out

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-config
+  namespace: fiap
+data:
+  PORT: "8090"
+  DD_DOGSTATSD_PORT: "8125"
+  DD_TRACE_ENABLED: "true"
+  LOG_LEVEL: "info"
+  APP_ENV: "development"
+  AWS_REGION: "us-east-1"

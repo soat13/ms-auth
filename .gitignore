@@ -1,0 +1,10 @@
+.env
+vendor
+.scannerwork
+*.http
+
+# test files
+coverage.out
+
+# ide folders
+.idea

@@ -11,6 +11,18 @@ jobs:
     name: Tests & Quality
     runs-on: ubuntu-latest
 
+    services:
+      dynamodb:
+        image: amazon/dynamodb-local
+        ports:
+          - "8000:8000"
+        healthcheck:
+          test: [ "CMD", "curl", "-X", "GET", "http://localhost:8000/shell" ]
+          interval: 5s
+          timeout: 5s
+          retries: 10
+          start_period: 5s
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v6

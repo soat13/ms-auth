@@ -36,7 +36,7 @@ jobs:
       - name: Fetch Terraform Outputs
         id: tf_outputs
         run: |
-          aws s3 cp s3://soatfiap-fase4/state/oficina-infra/terraform.tfstate infra.tfstate
+          aws s3 cp s3://soatfiap-4/state/oficina-infra/terraform.tfstate infra.tfstate
 
           CLUSTER_NAME=$(jq -r '.outputs.cluster_name.value' infra.tfstate)
 

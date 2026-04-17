@@ -80,7 +80,7 @@ spec:
               mountPath: /var/run/datadog
           livenessProbe:
             httpGet:
-              path: /health/live
+              path: /health
               port: 8090
             initialDelaySeconds: 10
             periodSeconds: 30
@@ -88,7 +88,7 @@ spec:
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /health/ready
+              path: /health
               port: 8090
             initialDelaySeconds: 10
             periodSeconds: 20

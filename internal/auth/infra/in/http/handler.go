@@ -41,6 +41,7 @@ func NewHandler(
 
 func Register(app *fiber.App, h *Handler) {
 	app.Post("/auth/login", h.login)
+	app.Get("/auth/validate", h.validate)
 }
 
 type loginBody struct {
@@ -98,3 +99,12 @@ func (h *Handler) login(ctx *fiber.Ctx) error {
 
 	return ctx.Status(fiber.StatusOK).JSON(resp)
 }
+
+func (h *Handler) validate(ctx *fiber.Ctx) error {
+	// If the request reached this handler, it means the middleware
+	// successfully validated the JWT.
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"valid": true,
+	})
+}
+

@@ -63,18 +63,16 @@ func (repo *UserRepository) Create(ctx context.Context, u *domain.User) error {
 		ConditionExpression: aws.String("attribute_not_exists(id)"),
 	})
 
-	// If ConditionExpression failed, user with this PK already exists.
-	// But in this logic, ID is generated so it's very rare.
 	var ccf *types.ConditionalCheckFailedException
 	if errors.As(err, &ccf) {
-		return errors.New("user with this ID already exists") // rare collision
+		return errors.New("user with this ID already exists")
 	}
 	return err
 }
 
 func (repo *UserRepository) Update(ctx context.Context, u *domain.User) error {
 	model := toModel(u)
-	
+
 	update := expression.Set(expression.Name("name"), expression.Value(model.Name)).
 		Set(expression.Name("document"), expression.Value(model.Document)).
 		Set(expression.Name("document_type"), expression.Value(model.DocumentType)).
@@ -131,7 +129,7 @@ func (repo *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.
 		return nil, err
 	}
 	if len(out.Item) == 0 {
-		return nil, nil // not found returns nil
+		return nil, nil
 	}
 
 	var model userModel
@@ -168,8 +166,6 @@ func (repo *UserRepository) GetByEmail(ctx context.Context, email string) (*doma
 }
 
 func (repo *UserRepository) List(ctx context.Context, pager pagination.Pagination) ([]*domain.User, error) {
-	// A simple Scan with Limit for demonstration, as full pagination requires ExclusiveStartKey handling.
-	// Since the DB adapter just asks for List(pagination), we'll do a Scan.
 	limit := int32(pager.Limit)
 	if limit <= 0 {
 		limit = 50
@@ -220,8 +216,6 @@ func (repo *UserRepository) ExistsByDocument(ctx context.Context, docStr string)
 	}
 	return len(out.Items) > 0, nil
 }
-
-// Private mappers
 
 func toModel(u *domain.User) *userModel {
 	return &userModel{

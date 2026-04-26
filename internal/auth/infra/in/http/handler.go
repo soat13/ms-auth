@@ -12,7 +12,6 @@ import (
 	"github.com/soat13/oficina-utils/pkg/valueobjects/document"
 )
 
-// ErrInvalidJSON is returned when the request body cannot be parsed as JSON.
 var ErrInvalidJSON = errors.New("invalid json body")
 
 type Handler struct {
@@ -32,9 +31,9 @@ func NewHandler(
 		errorHandler: errorHandler,
 	}
 
-	handler.errorHandler.ErrorResolver.RegisterHTTPUnauthorizedError(authApp.ErrInvalidCredentials)
 	handler.errorHandler.ErrorResolver.RegisterHTTPBadRequestError(ErrInvalidJSON)
 	handler.errorHandler.ErrorResolver.RegisterHTTPBadRequestError(document.ErrInvalidDocument)
+	handler.errorHandler.ErrorResolver.RegisterHTTPUnauthorizedError(authApp.ErrInvalidCredentials)
 
 	return handler
 }

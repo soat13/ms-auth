@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -47,6 +48,7 @@ func NewHandler(
 		errorHandler:  errorHandler,
 	}
 
+	handler.errorHandler.ErrorResolver.RegisterHTTPBadRequestError(ErrInvalidJSON)
 	handler.errorHandler.ErrorResolver.RegisterHTTPNotFoundError(application.ErrUserNotFound)
 	handler.errorHandler.ErrorResolver.RegisterHTTPConflictError(application.ErrDuplicateEmail)
 	handler.errorHandler.ErrorResolver.RegisterHTTPConflictError(application.ErrDuplicateDocument)

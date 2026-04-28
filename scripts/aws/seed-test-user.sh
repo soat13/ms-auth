@@ -33,7 +33,7 @@ echo "==> Region : $REGION"
 echo "==> Table  : $TABLE_NAME"
 echo "==> User ID: $USER_ID"
 echo "==> Email  : $USER_EMAIL"
-echo "==> Doc    : 12345678909"
+echo "==> Doc    : 58457673009"
 echo "==> Pass   : TestPass123!"
 echo ""
 
@@ -45,7 +45,7 @@ aws dynamodb put-item \
   --item "{
     \"id\":            {\"S\": \"$USER_ID\"},
     \"name\":          {\"S\": \"Test User\"},
-    \"document\":      {\"S\": \"12345678909\"},
+    \"document\":      {\"S\": \"58457673009\"},
     \"document_type\": {\"S\": \"CPF\"},
     \"email\":         {\"S\": \"$USER_EMAIL\"},
     \"phone_number\":  {\"S\": \"11999999999\"},
@@ -58,5 +58,5 @@ aws dynamodb put-item \
 echo "✅  Test user inserted."
 echo ""
 echo "Login credentials:"
-echo "  CPF     : 12345678909"
+echo "  CPF     : 58457673009"
 echo "  Password: TestPass123!"

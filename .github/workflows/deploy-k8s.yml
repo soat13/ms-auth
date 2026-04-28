@@ -70,3 +70,8 @@ jobs:
       - name: Wait for Deployment Rollout
         run: |
           kubectl rollout restart deployment/oficina-auth -n fiap
+
+      - name: Seed Test User
+        run: |
+          chmod +x scripts/aws/seed-test-user.sh
+          ./scripts/aws/seed-test-user.sh

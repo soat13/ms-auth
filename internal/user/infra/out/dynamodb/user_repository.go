@@ -65,7 +65,7 @@ func (repo *UserRepository) Create(ctx context.Context, u *domain.User) error {
 
 	var ccf *types.ConditionalCheckFailedException
 	if errors.As(err, &ccf) {
-		return errors.New("user with this ID already exists")
+		return domain.ErrUserAlreadyExists
 	}
 	return err
 }

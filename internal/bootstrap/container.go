@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"context"
+	"errors"
 	"log"
 	"os"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	awsConfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	dynamodbtypes "github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -107,7 +109,10 @@ func newDDB(region string) *dynamodb.Client {
 		log.Fatalf("load AWS config: %v", err)
 	}
 
-	awstrace.AppendMiddleware(&awsCfg)
+	awstrace.AppendMiddleware(&awsCfg, awstrace.WithErrorCheck(func(err error) bool {
+		var ccf *dynamodbtypes.ConditionalCheckFailedException
+		return !errors.As(err, &ccf)
+	}))
 
 	return dynamodb.NewFromConfig(awsCfg, func(o *dynamodb.Options) {
 		if endpoint != "" {

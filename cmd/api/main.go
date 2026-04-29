@@ -8,6 +8,7 @@ import (
 	"github.com/soat13/oficina-auth/internal/bootstrap"
 	"github.com/soat13/oficina-auth/internal/bootstrap/auth"
 	"github.com/soat13/oficina-auth/internal/bootstrap/user"
+	"github.com/soat13/oficina-utils/pkg/db/ddb"
 	"github.com/soat13/oficina-utils/pkg/observability"
 )
 
@@ -16,7 +17,7 @@ func main() {
 
 	obs := observability.Setup(
 		container.FiberApp,
-		bootstrap.NewDDBPinger(container.DDBClient, container.Cfg.TableName),
+		ddb.NewPinger(container.DDBClient, container.Cfg.TableName),
 	)
 	defer observability.Shutdown(obs)
 	container.Metrics = obs.Metrics

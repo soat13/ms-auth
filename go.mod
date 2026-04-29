@@ -5,6 +5,7 @@ go 1.25.1
 require (
 	github.com/aws/aws-sdk-go-v2 v1.41.5
 	github.com/aws/aws-sdk-go-v2/config v1.32.14
+	github.com/aws/aws-sdk-go-v2/credentials v1.19.14
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.20.37
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression v1.8.37
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.57.1
@@ -14,7 +15,7 @@ require (
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/google/uuid v1.6.0
 	github.com/rs/zerolog v1.35.0
-	github.com/soat13/oficina-utils v0.0.17
+	github.com/soat13/oficina-utils v0.0.20
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/DataDog/dd-trace-go.v1 v1.74.8
 )
@@ -42,7 +43,6 @@ require (
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.2 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.19.14 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.21 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.4.21 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.7.21 // indirect

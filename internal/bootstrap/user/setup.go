@@ -1,10 +1,10 @@
 package user
 
 import (
-	"github.com/soat13/oficina-auth/internal/bootstrap"
-	userApp "github.com/soat13/oficina-auth/internal/user/application"
-	userHTTP "github.com/soat13/oficina-auth/internal/user/infra/in/http"
-	userDDB "github.com/soat13/oficina-auth/internal/user/infra/out/dynamodb"
+	"github.com/soat13/ms-auth/internal/bootstrap"
+	userApp "github.com/soat13/ms-auth/internal/user/application"
+	userHTTP "github.com/soat13/ms-auth/internal/user/infra/in/http"
+	userDDB "github.com/soat13/ms-auth/internal/user/infra/out/dynamodb"
 )
 
 func SetupDefault(container *bootstrap.Container) {

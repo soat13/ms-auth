@@ -10,7 +10,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/soat13/oficina-auth/tests/testsupport"
+	"github.com/soat13/ms-auth/tests/testsupport"
 	"github.com/stretchr/testify/require"
 )
 

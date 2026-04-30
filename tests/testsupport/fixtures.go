@@ -5,15 +5,15 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	userDdb "github.com/soat13/oficina-auth/internal/user/infra/out/dynamodb"
+	userDdb "github.com/soat13/ms-auth/internal/user/infra/out/dynamodb"
 	"github.com/soat13/oficina-utils/pkg/valueobjects/document"
 	"github.com/soat13/oficina-utils/pkg/valueobjects/email"
 	"github.com/soat13/oficina-utils/pkg/valueobjects/password"
 	"github.com/soat13/oficina-utils/pkg/valueobjects/phone"
 
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	"github.com/soat13/oficina-auth/internal/shared/authz"
-	"github.com/soat13/oficina-auth/internal/user/domain"
+	"github.com/soat13/ms-auth/internal/shared/authz"
+	"github.com/soat13/ms-auth/internal/user/domain"
 	"github.com/stretchr/testify/require"
 )
 

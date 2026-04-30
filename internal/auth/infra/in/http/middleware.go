@@ -5,8 +5,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	authApp "github.com/soat13/oficina-auth/internal/auth/application"
-	authDomain "github.com/soat13/oficina-auth/internal/auth/domain"
+	authApp "github.com/soat13/ms-auth/internal/auth/application"
+	authDomain "github.com/soat13/ms-auth/internal/auth/domain"
 	fiberHelper "github.com/soat13/oficina-utils/pkg/http/fiber"
 )
 

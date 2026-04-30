@@ -19,7 +19,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
-	ddbAdapter "github.com/soat13/oficina-auth/internal/auth/infra/out/dynamodb"
+	ddbAdapter "github.com/soat13/ms-auth/internal/auth/infra/out/dynamodb"
 )
 
 func getEnv(key, fallback string) string {

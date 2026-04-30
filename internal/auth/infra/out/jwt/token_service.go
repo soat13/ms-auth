@@ -8,8 +8,8 @@ import (
 
 	jwtlib "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/soat13/oficina-auth/internal/auth/application"
-	authDomain "github.com/soat13/oficina-auth/internal/auth/domain"
+	"github.com/soat13/ms-auth/internal/auth/application"
+	authDomain "github.com/soat13/ms-auth/internal/auth/domain"
 )
 
 const (

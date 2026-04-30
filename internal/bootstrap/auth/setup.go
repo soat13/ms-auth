@@ -2,10 +2,10 @@ package auth
 
 import (
 	"github.com/gofiber/fiber/v2"
-	authApp "github.com/soat13/oficina-auth/internal/auth/application"
-	authHTTP "github.com/soat13/oficina-auth/internal/auth/infra/in/http"
-	authDDB "github.com/soat13/oficina-auth/internal/auth/infra/out/dynamodb"
-	"github.com/soat13/oficina-auth/internal/bootstrap"
+	authApp "github.com/soat13/ms-auth/internal/auth/application"
+	authHTTP "github.com/soat13/ms-auth/internal/auth/infra/in/http"
+	authDDB "github.com/soat13/ms-auth/internal/auth/infra/out/dynamodb"
+	"github.com/soat13/ms-auth/internal/bootstrap"
 )
 
 func SetupDefault(container *bootstrap.Container) {

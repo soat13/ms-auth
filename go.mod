@@ -15,7 +15,7 @@ require (
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/google/uuid v1.6.0
 	github.com/rs/zerolog v1.35.0
-	github.com/soat13/oficina-utils v0.0.21
+	github.com/soat13/oficina-utils v0.0.23
 	github.com/stretchr/testify v1.11.1
 	gopkg.in/DataDog/dd-trace-go.v1 v1.74.8
 )

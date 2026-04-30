@@ -10,8 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/google/uuid"
-	"github.com/soat13/oficina-auth/internal/auth/application"
-	"github.com/soat13/oficina-auth/internal/shared/authz"
+	"github.com/soat13/ms-auth/internal/auth/application"
+	"github.com/soat13/ms-auth/internal/shared/authz"
 	"github.com/soat13/oficina-utils/pkg/valueobjects/password"
 )
 

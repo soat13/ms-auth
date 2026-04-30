@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/soat13/oficina-auth/internal/shared/authz"
+	"github.com/soat13/ms-auth/internal/shared/authz"
 	"github.com/soat13/oficina-utils/pkg/valueobjects/document"
 	"github.com/soat13/oficina-utils/pkg/valueobjects/email"
 	"github.com/soat13/oficina-utils/pkg/valueobjects/password"

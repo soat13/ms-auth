@@ -3,8 +3,8 @@ package application
 import (
 	"context"
 
-	authDomain "github.com/soat13/oficina-auth/internal/auth/domain"
-	"github.com/soat13/oficina-auth/internal/shared/strutil"
+	authDomain "github.com/soat13/ms-auth/internal/auth/domain"
+	"github.com/soat13/ms-auth/internal/shared/strutil"
 	"github.com/soat13/oficina-utils/pkg/valueobjects/document"
 )
 

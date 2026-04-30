@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/rs/zerolog/log"
-	"github.com/soat13/oficina-auth/assets/docs"
-	"github.com/soat13/oficina-auth/internal/bootstrap"
-	"github.com/soat13/oficina-auth/internal/bootstrap/auth"
-	"github.com/soat13/oficina-auth/internal/bootstrap/user"
+	"github.com/soat13/ms-auth/assets/docs"
+	"github.com/soat13/ms-auth/internal/bootstrap"
+	"github.com/soat13/ms-auth/internal/bootstrap/auth"
+	"github.com/soat13/ms-auth/internal/bootstrap/user"
 	"github.com/soat13/oficina-utils/pkg/db/ddb"
 	"github.com/soat13/oficina-utils/pkg/observability"
 )

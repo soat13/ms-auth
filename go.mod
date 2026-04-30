@@ -1,4 +1,4 @@
-module github.com/soat13/oficina-auth
+module github.com/soat13/ms-auth
 
 go 1.25.1
 

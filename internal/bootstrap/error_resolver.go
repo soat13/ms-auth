@@ -1,11 +1,11 @@
 package bootstrap
 
 import (
-	authApp "github.com/soat13/oficina-auth/internal/auth/application"
-	authDomain "github.com/soat13/oficina-auth/internal/auth/domain"
-	"github.com/soat13/oficina-auth/internal/shared/authz"
-	userApp "github.com/soat13/oficina-auth/internal/user/application"
-	userDomain "github.com/soat13/oficina-auth/internal/user/domain"
+	authApp "github.com/soat13/ms-auth/internal/auth/application"
+	authDomain "github.com/soat13/ms-auth/internal/auth/domain"
+	"github.com/soat13/ms-auth/internal/shared/authz"
+	userApp "github.com/soat13/ms-auth/internal/user/application"
+	userDomain "github.com/soat13/ms-auth/internal/user/domain"
 	errorHelper "github.com/soat13/oficina-utils/pkg/error"
 	fiberHelper "github.com/soat13/oficina-utils/pkg/http/fiber"
 	"github.com/soat13/oficina-utils/pkg/valueobjects/document"

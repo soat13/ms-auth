@@ -7,7 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	authApp "github.com/soat13/oficina-auth/internal/auth/application"
+	authApp "github.com/soat13/ms-auth/internal/auth/application"
 	fiberHelper "github.com/soat13/oficina-utils/pkg/http/fiber"
 	"github.com/soat13/oficina-utils/pkg/valueobjects/document"
 )

@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/soat13/oficina-auth/internal/auth/application"
-	"github.com/soat13/oficina-auth/internal/auth/application/mocks"
-	authDomain "github.com/soat13/oficina-auth/internal/auth/domain"
+	"github.com/soat13/ms-auth/internal/auth/application"
+	"github.com/soat13/ms-auth/internal/auth/application/mocks"
+	authDomain "github.com/soat13/ms-auth/internal/auth/domain"
 	"github.com/soat13/oficina-utils/pkg/valueobjects/document"
 	"github.com/soat13/oficina-utils/pkg/valueobjects/password"
 )

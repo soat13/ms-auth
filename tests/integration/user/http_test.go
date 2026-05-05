@@ -177,7 +177,7 @@ func TestGetUser(t *testing.T) {
 		setup := ensureSetup(t)
 
 		uid := testsupport.ThereIsAUser(t, setup.DDBClient, setup.TableName,
-			uuid.Nil, "John Mechanic", "85891302071", "11987654321", "user@example.com", "password123", []string{"mechanic"})
+			uuid.Nil, "John Mechanic", "58457673009", "11987654321", "user@example.com", "password123", []string{"mechanic"})
 
 		resp := getUser(t, setup.FiberApp, setup.AuthToken, uid)
 		require.Equal(t, fiber.StatusOK, resp.StatusCode)

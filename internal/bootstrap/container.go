@@ -25,6 +25,7 @@ import (
 
 type (
 	Config struct {
+		AppEnv        string
 		AWSRegion     string
 		TableName     string
 		EmailIndex    string
@@ -32,6 +33,7 @@ type (
 		JWTSecret     string
 		JWTExpiration time.Duration
 		HTTPPort      int
+		DynamoDBEndpoint string
 	}
 
 	Container struct {
@@ -71,7 +73,7 @@ func Build(
 	}
 
 	if ddbClient == nil {
-		ddbClient = newDDB(cfg.AWSRegion)
+		ddbClient = newDDB(cfg)
 	}
 
 	if tokenService == nil {
@@ -92,13 +94,12 @@ func Build(
 	}
 }
 
-func newDDB(region string) *dynamodb.Client {
+func newDDB(cfg Config) *dynamodb.Client {
 	loadOpts := []func(*awsConfig.LoadOptions) error{
-		awsConfig.WithRegion(region),
+		awsConfig.WithRegion(cfg.AWSRegion),
 	}
 
-	endpoint := os.Getenv("DYNAMODB_ENDPOINT")
-	if endpoint != "" {
+	if cfg.AppEnv == "local" || cfg.DynamoDBEndpoint != "" {
 		loadOpts = append(loadOpts,
 			awsConfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider("local", "local", "")),
 		)
@@ -115,8 +116,8 @@ func newDDB(region string) *dynamodb.Client {
 	}))
 
 	return dynamodb.NewFromConfig(awsCfg, func(o *dynamodb.Options) {
-		if endpoint != "" {
-			o.BaseEndpoint = aws.String(endpoint)
+		if cfg.DynamoDBEndpoint != "" {
+			o.BaseEndpoint = aws.String(cfg.DynamoDBEndpoint)
 		}
 	})
 }
@@ -140,7 +141,16 @@ func newApp() *fiber.App {
 }
 
 func loadConfig() Config {
+	appEnv := envOrDefault("APP_ENV", "local")
+	
+	// If APP_ENV is local and DYNAMODB_ENDPOINT is not set, default to localhost
+	ddbEndpoint := os.Getenv("DYNAMODB_ENDPOINT")
+	if appEnv == "local" && ddbEndpoint == "" {
+		ddbEndpoint = "http://localhost:8000"
+	}
+
 	return Config{
+		AppEnv:        appEnv,
 		JWTSecret:     mustEnv("JWT_SECRET"),
 		AWSRegion:     envOrDefault("AWS_REGION", "us-east-1"),
 		TableName:     envOrDefault("DYNAMODB_TABLE", "users"),
@@ -148,6 +158,7 @@ func loadConfig() Config {
 		DocumentIndex: envOrDefault("DYNAMODB_DOCUMENT_INDEX", "document-index"),
 		JWTExpiration: parseDuration(envOrDefault("JWT_EXPIRATION", "1h")),
 		HTTPPort:      parseInt(envOrDefault("PORT", "8090")),
+		DynamoDBEndpoint: ddbEndpoint,
 	}
 }
 

@@ -1,5 +1,6 @@
 .PHONY: install up down run test test-coverage mod vendor tidy fmt lint sh \
-        migrate-up migrate-down migrate-status seed-up sonar sonar-analysis
+        migrate-up migrate-down migrate-status seed-up sonar sonar-analysis \
+        aws-create-table aws-seed-user aws-integration-test
 
 # Load .env file if it exists
 ifneq (,$(wildcard .env))
@@ -43,6 +44,21 @@ lint:
 # Shell
 sh:
 	docker compose exec app-dev bash
+
+# AWS / Local Testing
+DYNAMODB_ENDPOINT ?= http://localhost:8000
+
+aws-create-table:
+	@chmod +x scripts/aws/create-dynamodb-table.sh
+	./scripts/aws/create-dynamodb-table.sh --endpoint $(DYNAMODB_ENDPOINT)
+
+aws-seed-user:
+	@chmod +x scripts/aws/seed-test-user.sh
+	./scripts/aws/seed-test-user.sh --endpoint $(DYNAMODB_ENDPOINT)
+
+aws-integration-test:
+	@chmod +x scripts/aws/integration-test.sh
+	./scripts/aws/integration-test.sh --endpoint $(DYNAMODB_ENDPOINT)
 
 # -------------------------------
 # SonarQube Analysis

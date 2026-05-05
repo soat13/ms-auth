@@ -45,8 +45,8 @@ type userItem struct {
 
 // userRepository implements application.UserReader backed by DynamoDB.
 type userRepository struct {
-	client         QueryClient
-	tableName      string
+	client            QueryClient
+	tableName         string
 	emailIndexName    string
 	documentIndexName string
 }

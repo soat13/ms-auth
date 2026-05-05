@@ -8,7 +8,7 @@ info:
     Utilize `POST /auth/login` para obter um token JWT e, em seguida, informe `Bearer <token>` no cabeçalho `Authorization` ao chamar as rotas protegidas. No Swagger UI, use o botão **Authorize** para registrar o token.
 servers:
   - url: /
-    description: Servidor atual 
+    description: Servidor atual
 security:
   - bearerAuth: []
 tags:
@@ -19,7 +19,7 @@ tags:
 paths:
   /auth/login:
     post:
-      tags: [Auth]
+      tags: [ Auth ]
       summary: Autenticar usuário
       description: Retorna um token JWT válido para acessar as rotas protegidas.
       security: []
@@ -28,83 +28,83 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: "#/components/schemas/LoginRequest"
             example:
-              cpf: "52998224725"
-              password: "password123"
+              cpf: "58457673009"
+              password: "TestPass123!"
       responses:
-        '200':
+        "200":
           description: Autenticação realizada com sucesso.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
-        '400':
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
           description: Corpo JSON inválido.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
               example:
                 code: "400"
                 message: invalid JSON body
-        '401':
+        "401":
           description: Credenciais inválidas.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
               example:
                 code: "401"
                 message: invalid credentials
-        '422':
-          $ref: '#/components/responses/UnprocessableEntityResponse'
+        "422":
+          $ref: "#/components/responses/UnprocessableEntityResponse"
 
   /admin/users:
     get:
-      tags: [Users]
+      tags: [ Users ]
       summary: Listar usuários
       parameters:
-        - $ref: '#/components/parameters/LimitParam'
-        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
       responses:
-        '200':
+        "200":
           description: Lista de usuários.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserListResponse'
-        '401':
-          $ref: '#/components/responses/UnauthorizedResponse'
+                $ref: "#/components/schemas/UserListResponse"
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
     post:
-      tags: [Users]
+      tags: [ Users ]
       summary: Criar usuário
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserCreateRequest'
+              $ref: "#/components/schemas/UserCreateRequest"
       responses:
-        '201':
+        "201":
           description: Usuário criado.
-        '400':
+        "400":
           description: Corpo JSON inválido.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
               example:
                 code: "400"
                 message: invalid JSON body
-        '401':
-          $ref: '#/components/responses/UnauthorizedResponse'
-        '409':
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "409":
           description: Usuário duplicado (documento ou email já existente).
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
               examples:
                 duplicateDocument:
                   value:
@@ -114,60 +114,60 @@ paths:
                   value:
                     code: "409"
                     message: user with this email already exists
-        '422':
-          $ref: '#/components/responses/UnprocessableEntityResponse'
+        "422":
+          $ref: "#/components/responses/UnprocessableEntityResponse"
 
   /admin/users/{id}:
     parameters:
-      - $ref: '#/components/parameters/ResourceIdParam'
+      - $ref: "#/components/parameters/ResourceIdParam"
     get:
-      tags: [Users]
+      tags: [ Users ]
       summary: Obter usuário por ID
       responses:
-        '200':
+        "200":
           description: Usuário encontrado.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-        '400':
+                $ref: "#/components/schemas/User"
+        "400":
           description: ID inválido.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
               example:
                 code: "400"
                 message: invalid ID
-        '401':
-          $ref: '#/components/responses/UnauthorizedResponse'
-        '404':
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "404":
           description: Usuário não encontrado.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
               example:
                 code: "404"
                 message: user not found
     patch:
-      tags: [Users]
+      tags: [ Users ]
       summary: Atualizar usuário
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserUpdateRequest'
+              $ref: "#/components/schemas/UserUpdateRequest"
       responses:
-        '204':
+        "204":
           description: Usuário atualizado.
-        '400':
+        "400":
           description: ID inválido ou corpo JSON inválido.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
               examples:
                 invalidId:
                   value:
@@ -177,51 +177,51 @@ paths:
                   value:
                     code: "400"
                     message: invalid JSON body
-        '401':
-          $ref: '#/components/responses/UnauthorizedResponse'
-        '404':
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "404":
           description: Usuário não encontrado.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
               example:
                 code: "404"
                 message: user not found
-        '409':
+        "409":
           description: Email duplicado.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
               example:
                 code: user with this email already exists
                 message: "409"
-        '422':
-          $ref: '#/components/responses/UnprocessableEntityResponse'
+        "422":
+          $ref: "#/components/responses/UnprocessableEntityResponse"
     delete:
-      tags: [Users]
+      tags: [ Users ]
       summary: Remover usuário
       responses:
-        '204':
+        "204":
           description: Usuário removido.
-        '400':
+        "400":
           description: ID inválido.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
               example:
                 code: "400"
                 message: invalid ID
-        '401':
-          $ref: '#/components/responses/UnauthorizedResponse'
-        '404':
+        "401":
+          $ref: "#/components/responses/UnauthorizedResponse"
+        "404":
           description: Usuário não encontrado.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
               example:
                 code: "404"
                 message: user not found
@@ -263,7 +263,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
           examples:
             missingToken:
               value:
@@ -282,35 +282,35 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
     UnprocessableEntityResponse:
       description: Entidade não processável (erros de validação ou regras de negócio).
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ValidationError'
+            $ref: "#/components/schemas/ValidationError"
     InvalidIDResponse:
       description: Identificador inválido.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
     NotFoundResponse:
       description: Recurso não encontrado.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
     ConflictResponse:
       description: Conflito (recurso duplicado ou operação inválida).
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
   schemas:
     Error:
       type: object
-      required: [code, message]
+      required: [ code, message ]
       properties:
         code:
           type: string
@@ -320,7 +320,7 @@ components:
           example: invalid JSON body
     IdResponse:
       type: object
-      required: [id]
+      required: [ id ]
       properties:
         id:
           type: string
@@ -328,7 +328,7 @@ components:
           description: ID do recurso criado.
     ValidationError:
       type: object
-      required: [code, message]
+      required: [ code, message ]
       properties:
         code:
           type: string
@@ -349,7 +349,7 @@ components:
                 example: Password is a required field
     LoginRequest:
       type: object
-      required: [cpf, password]
+      required: [ cpf, password ]
       properties:
         cpf:
           type: string
@@ -359,7 +359,7 @@ components:
           minLength: 8
     AuthenticatedUser:
       type: object
-      required: [id, name, email, roles]
+      required: [ id, name, email, roles ]
       properties:
         id:
           type: string
@@ -375,7 +375,7 @@ components:
             type: string
     LoginResponse:
       type: object
-      required: [access_token, token_type, expires_in, expires_at, user]
+      required: [ access_token, token_type, expires_in, expires_at, user ]
       properties:
         access_token:
           type: string
@@ -390,10 +390,10 @@ components:
           type: string
           format: date-time
         user:
-          $ref: '#/components/schemas/AuthenticatedUser'
+          $ref: "#/components/schemas/AuthenticatedUser"
     User:
       type: object
-      required: [id, name, document, document_type, email, phone_number, roles]
+      required: [ id, name, document, document_type, email, phone_number, roles ]
       properties:
         id:
           type: string
@@ -415,7 +415,7 @@ components:
             type: string
     UserCreateRequest:
       type: object
-      required: [name, document, email, phone_number, password, roles]
+      required: [ name, document, email, phone_number, password, roles ]
       properties:
         name:
           type: string
@@ -456,9 +456,9 @@ components:
             type: string
     UserListResponse:
       type: object
-      required: [data]
+      required: [ data ]
       properties:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/User'
+            $ref: "#/components/schemas/User"

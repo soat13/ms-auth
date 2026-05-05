@@ -33,7 +33,13 @@ Os fluxos de autenticação (Login) e gestão de usuários (CRUD) seguem os padr
 
 A API é construída em **Go**, seguindo princípios de **DDD** e **Arquitetura Hexagonal**, organizada por contextos de domínio independentes.
 
-### Arquitetura
+### Arquiteturas
+
+### Arquitetura de componentes
+![](Infra-ms-auth.drawio.svg)
+
+
+### Arquitetura de sotfware
 
 O projeto adota **Arquitetura Hexagonal (Ports & Adapters)** combinada com **DDD**, organizado por contextos de domínio independentes.
 

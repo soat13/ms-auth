@@ -71,8 +71,8 @@ sonar: up
 	fi
 	make test-coverage
 	docker compose run --rm sonar-scanner \
-		-Dsonar.projectKey=oficina \
-		-Dsonar.projectName="oficina" \
+		-Dsonar.projectKey=ms-auth \
+		-Dsonar.projectName="MS-Auth" \
 		-Dsonar.sources=. \
 		-Dsonar.exclusions=**/vendor/**,**/mocks/**,**/*_test.go,**/tests/**,**/scripts/**,**/assets/**,.env*,**/*.md,**/cmd/**,**/views.go,**/repository.go,**/bootstrap/** \
 		-Dsonar.tests=. \

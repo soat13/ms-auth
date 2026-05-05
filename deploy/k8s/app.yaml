@@ -6,7 +6,7 @@ metadata:
   labels:
     app: oficina-auth
     tags.datadoghq.com/env: "development"
-    tags.datadoghq.com/service: "oficina-auth"
+    tags.datadoghq.com/service: "ms-auth"
     tags.datadoghq.com/version: "1.0.0"
 spec:
   replicas: 1
@@ -18,10 +18,10 @@ spec:
       labels:
         app: oficina-auth
         tags.datadoghq.com/env: "development"
-        tags.datadoghq.com/service: "oficina-auth"
+        tags.datadoghq.com/service: "ms-auth"
         tags.datadoghq.com/version: "1.0.0"
       annotations:
-        ad.datadoghq.com/oficina-auth.logs: "[{\"source\":\"go\",\"service\":\"oficina-auth\"}]"
+        ad.datadoghq.com/oficina-auth.logs: '[{"source":"go","service":"ms-auth"}]'
     spec:
       serviceAccountName: auth-sa
       automountServiceAccountToken: false

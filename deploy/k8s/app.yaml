@@ -4,7 +4,7 @@ metadata:
   name: oficina-auth
   namespace: fiap
   labels:
-    app: oficina-auth 
+    app: oficina-auth
     tags.datadoghq.com/env: "development"
     tags.datadoghq.com/service: "ms-auth"
     tags.datadoghq.com/version: "1.0.0"
@@ -24,7 +24,7 @@ spec:
         ad.datadoghq.com/oficina-auth.logs: '[{"source":"go","service":"ms-auth"}]'
     spec:
       serviceAccountName: auth-sa
-      automountServiceAccountToken: true
+      automountServiceAccountToken: false
       terminationGracePeriodSeconds: 3
       volumes:
         - name: apmsocketpath
@@ -35,12 +35,12 @@ spec:
           imagePullPolicy: Always
           name: oficina-api
           ports:
-          - containerPort: 8090
+            - containerPort: 8090
           resources:
             limits:
               cpu: 50m
               memory: 20Mi
-              ephemeral-storage: 250Mi 
+              ephemeral-storage: 250Mi
             requests:
               cpu: 20m
               memory: 20Mi
@@ -68,13 +68,14 @@ spec:
             - name: DD_SERVICE
               valueFrom:
                 fieldRef:
-                  fieldPath: metadata.labels['tags.datadoghq.com/service']  
+                  fieldPath: metadata.labels['tags.datadoghq.com/service']
             - name: DD_VERSION
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.labels['tags.datadoghq.com/version']
             - name: DD_TRACE_SAMPLING_RULES
-              value: '[{"resource": "GET /health*", "sample_rate": 0}, {"resource": "POST /health*", "sample_rate": 0}]'      
+              value: "[{\"resource\": \"GET /health*\", \"sample_rate\": 0}, {\"resource\":
+                \"POST /health*\", \"sample_rate\": 0}]"
           volumeMounts:
             - name: apmsocketpath
               mountPath: /var/run/datadog

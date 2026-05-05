@@ -1,8 +1,8 @@
-# Oficina API
+# Oficina Auth Service
 
 ## Sobre o Projeto
 
-Sistema de gestão para oficinas mecânicas que automatiza o fluxo completo de atendimento, desde a entrada do veículo até a entrega ao cliente. A aplicação gerencia clientes, veículos, catálogos de serviços e produtos, orçamentos e ordens de serviço, oferecendo controle centralizado das operações da oficina.
+Microserviço responsável pela autenticação e gestão de usuários do sistema Oficina. Ele gerencia o ciclo de vida de usuários, atribuição de perfis (RBAC) e emissão de tokens JWT para proteção das APIs do ecossistema.
 
 ### Links Úteis
 
@@ -11,28 +11,23 @@ Sistema de gestão para oficinas mecânicas que automatiza o fluxo completo de a
 
 ### Funcionalidades Principais
 
-- **Gestão de Clientes e Veículos** — Cadastro e relacionamento entre clientes e seus automóveis
-- **Catálogos** — Serviços técnicos e produtos com controle de estoque
-- **Orçamentos** — Propostas com itens de serviço e produto, sujeitas à aprovação
-- **Ordens de Serviço (OS)** — Fluxo completo: recepção, diagnóstico, aprovação, execução e liberação
-- **Controle de Acesso** — Autenticação e autorização por perfis (Atendente, Mecânico, Gerente)
-- **Eventos de Domínio** — Desacoplamento entre contextos (ex: baixa de estoque após aprovação)
+- **Gestão de Usuários** — Cadastro, atualização e remoção de usuários com validação de documentos (CPF/CNPJ).
+- **Controle de Acesso (RBAC)** — Gestão de perfis e permissões (Atendente, Mecânico, Gerente, Admin).
+- **Autenticação** — Login seguro com validação de credenciais e geração de tokens JWT.
+- **Integração com DynamoDB** — Armazenamento escalável e de baixa latência para dados de usuários.
 
-A aplicação segue os princípios de **Domain-Driven Design (DDD)** e **Arquitetura Hexagonal**, com organização por contextos de domínio independentes.
+A aplicação segue os princípios de **Domain-Driven Design (DDD)** e **Arquitetura Hexagonal**.
 
-## Fluxos Principais
+## Fluxos de Autenticação
 
-- **Repair Order — fluxo end-to-end**  
-  Fluxo operacional completo da Ordem de Serviço, da criação à entrega do veículo.  
-   [`docs/repair-order-complete-flow.md`](docs/repair-order-complete-flow.md)
+Os fluxos de autenticação (Login) e gestão de usuários (CRUD) seguem os padrões definidos na especificação OpenAPI. Detalhes de implementação, como a geração de tokens JWT e persistência no DynamoDB, podem ser encontrados na seção de **Aspectos Técnicos**.
 
-> Payloads, schemas e exemplos de request/response estão documentados no **Swagger/OpenAPI**.  
-> Os documentos de fluxo focam exclusivamente na **ordem de chamadas e regras de negócio**.
+> Payloads, schemas e exemplos de request/response estão documentados no **Swagger/OpenAPI**.
+
 
 ## Documentação Técnica
 
-- Glossário de domínio (termos, roles e status): [`docs/domain-glossary.md`](docs/domain-glossary.md)
-- Arquitetura e decisões técnicas: [`docs/architecture.md`](docs/architecture.md)
+- Arquitetura e decisões técnicas: [OpenAPI Spec](assets/docs/openapi.yaml)
 
 ## Aspectos Técnicos
 
@@ -47,25 +42,20 @@ Cada contexto é estruturado em:
 - **Domain** (`domain/`) — Entidades, value objects e regras de negócio puras, sem dependências externas
 - **Application** (`application/`) — Casos de uso que representam as operações do sistema (pontos de entrada) e ports (interfaces) para dependências externas
 - **Infrastructure** (`infra/`) — Adapters concretos:
-    - **Inbound**: handlers HTTP e listeners de eventos
-    - **Outbound**: repositórios (Bun/Postgres), publicação de eventos, JWT e integrações externas
+    - **Inbound**: handlers HTTP (Fiber) e middleware JWT.
+    - **Outbound**: repositórios (**DynamoDB**), geração de tokens (**JWT**) e hash de senhas (**Bcrypt**).
 
 Os casos de uso são invocados por adapters de entrada e acessam recursos externos exclusivamente via **ports**, garantindo baixo acoplamento e inversão de dependência.
-
-A comunicação entre contextos ocorre por **eventos de domínio**, publicados e consumidos através de um event bus em memória, preservando o desacoplamento entre bounded contexts.
-
-Para detalhes completos da arquitetura e decisões técnicas, consulte: [`docs/architecture.md`](docs/architecture.md)
 
 ### Stack Tecnológica
 
 - **Linguagem**: Go 1.25.1
 - **Framework HTTP**: Fiber v2
-- **ORM**: Bun
-- **Migrações**: sql-migrate
+- **Banco de Dados**: **Amazon DynamoDB** — Escolhido pela alta escalabilidade, baixa latência e modelo de dados flexível. No ambiente local, utilizamos o `dynamodb-local`.
+- **SDK**: AWS SDK for Go v2
 - **Autenticação**: JWT (HS256)
-- **Testes**: Go testing + testify
-- **Containerização**: Docker + Docker Compose
-- **Banco de Dados**: PostgreSQL — Escolhido por ser um SGBD relacional maduro e confiável, adequado para garantir integridade transacional em operações críticas como criação de Ordens de Serviço, aprovação de orçamentos e controle de estoque. O modelo relacional facilita a consistência entre entidades fortemente relacionadas e oferece suporte nativo a transações ACID, constraints e índices, essenciais para a confiabilidade e evolução do sistema.
+- **Testes**: Go testing + testify (Integração com DynamoDB Local)
+- **Containerização**: Docker + Docker Compose (DynamoDB Local)
 
 ## Requisitos
 
@@ -97,26 +87,27 @@ O projeto utiliza **GitHub Actions** para CI/CD automatizado com os seguintes jo
    - Aplica todos os recursos Kubernetes necessários
    - Executa rolling update do deployment
 
-## Executando o Projeto
+## Executando o Projeto local
 
 ### Com Make
 
 1. Subir os containers:
     - `make install`
-    - Caso não exista `.env`, ele será criado a partir do `.env-example`
-2. Aplicar migrações:
-    - `make migrate-up`
+    - Caso não exista `.env`, ele será criado a partir do `.env-example`.
+2. Provisionar o Banco de Dados (DynamoDB):
+    - `make aws-create-table` (Cria a tabela `users`)
+    - `make aws-seed-user` (Cria um usuário admin de teste: `58457673009` / `TestPass123!`)
 3. Rodar a API:
     - `make run`
 
 ### Sem Make
 
-1. Criar o `.env` a partir do `.env-example`
+1. Criar o `.env` a partir do `.env-example`.
 2. Subir os containers:
     - `docker compose up -d`
-3. Aplicar migrações:
-    - `docker compose exec -T app-dev sh -lc 'test -x /go/bin/sql-migrate || GOBIN=/go/bin /usr/local/go/bin/go install github.com/rubenv/sql-migrate/sql-migrate@latest'`
-    - `docker compose exec -T app-dev sh -lc '/go/bin/sql-migrate up -config=./scripts/db/dbconfig.yml -env=development'`
+3. Provisionar o Banco de Dados:
+    - `./scripts/aws/create-dynamodb-table.sh --endpoint http://localhost:8000`
+    - `./scripts/aws/seed-test-user.sh --endpoint http://localhost:8000`
 4. Rodar a API:
     - `docker compose exec app-dev go run ./cmd/api`
 
@@ -135,11 +126,12 @@ A API utiliza **JWT** para proteger as rotas administrativas (`/admin/**`).
 
 ## Testes
 
-- `make test` — executa testes unitários e de integração
+- `make test` — executa testes unitários e de integração (usa DynamoDB Local)
+- `make aws-integration-test` — executa teste de integração específico para o adapter DynamoDB
 - `make test-coverage` — gera relatório de cobertura
 - `make sonar` — executa análise no SonarQube
 
-> Os testes de integração criam bancos isolados e aplicam migrações automaticamente
+> Os testes de integração utilizam o DynamoDB Local com a flag `-sharedDb` para garantir consistência de dados entre os diferentes Access Keys.
 
 ## Deploy no Kubernetes
 

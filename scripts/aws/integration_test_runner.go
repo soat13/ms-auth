@@ -33,8 +33,9 @@ func main() {
 	region := getEnv("AWS_REGION", "us-east-1")
 	tableName := getEnv("TABLE_NAME", "users")
 	documentIndex := getEnv("DOCUMENT_INDEX", "document-index")
-	testDocument := getEnv("TEST_DOCUMENT", "12345678909")
+	testDocument := getEnv("TEST_DOCUMENT", "58457673009")
 	testPassword := getEnv("TEST_PASSWORD", "TestPass123!")
+	endpoint := getEnv("DYNAMODB_ENDPOINT", "")
 
 	ctx := context.Background()
 
@@ -44,7 +45,11 @@ func main() {
 		fatalf("load AWS config: %v", err)
 	}
 
-	client := dynamodb.NewFromConfig(cfg)
+	client := dynamodb.NewFromConfig(cfg, func(o *dynamodb.Options) {
+		if endpoint != "" {
+			o.BaseEndpoint = &endpoint
+		}
+	})
 	repo := ddbAdapter.NewUserRepository(client, tableName, documentIndex)
 
 	fmt.Printf("==> GetByDocument(%q) ...\n", testDocument)

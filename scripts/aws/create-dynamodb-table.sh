@@ -20,26 +20,34 @@ EMAIL_INDEX="${EMAIL_INDEX:-email-index}"
 DOCUMENT_INDEX="${DOCUMENT_INDEX:-document-index}"
 REGION="${AWS_REGION:-us-east-1}"
 BILLING_MODE="${BILLING_MODE:-PAY_PER_REQUEST}"   # or PROVISIONED
+ENDPOINT_URL="${DYNAMODB_ENDPOINT:-}"
 
 # ---------- parse flags ------------------------------------------------------
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --region)  REGION="$2";     shift 2 ;;
-    --table)   TABLE_NAME="$2"; shift 2 ;;
-    --billing) BILLING_MODE="$2"; shift 2 ;;
+    --region)   REGION="$2";       shift 2 ;;
+    --table)    TABLE_NAME="$2";   shift 2 ;;
+    --billing)  BILLING_MODE="$2"; shift 2 ;;
+    --endpoint) ENDPOINT_URL="$2"; shift 2 ;;
     *) echo "Unknown arg: $1"; exit 1 ;;
   esac
 done
+
+AWS_CMD="aws"
+if [[ -n "$ENDPOINT_URL" ]]; then
+  AWS_CMD="aws --endpoint-url $ENDPOINT_URL"
+fi
 
 echo "==> Region      : $REGION"
 echo "==> Table       : $TABLE_NAME"
 echo "==> Email GSI   : $EMAIL_INDEX"
 echo "==> Doc GSI     : $DOCUMENT_INDEX"
 echo "==> Billing mode: $BILLING_MODE"
+echo "==> Endpoint    : ${ENDPOINT_URL:-AWS Default}"
 echo ""
 
 # ---------- check if table already exists ------------------------------------
-if aws dynamodb describe-table \
+if $AWS_CMD dynamodb describe-table \
     --table-name "$TABLE_NAME" \
     --region "$REGION" \
     --output text \
@@ -51,7 +59,7 @@ fi
 # ---------- create table -----------------------------------------------------
 echo "==> Creating table '$TABLE_NAME'..."
 
-aws dynamodb create-table \
+$AWS_CMD dynamodb create-table \
   --region "$REGION" \
   --table-name "$TABLE_NAME" \
   --billing-mode "$BILLING_MODE" \
@@ -85,7 +93,7 @@ aws dynamodb create-table \
 # ---------- wait until ACTIVE ------------------------------------------------
 echo ""
 echo "==> Waiting for table to become ACTIVE..."
-aws dynamodb wait table-exists \
+$AWS_CMD dynamodb wait table-exists \
   --table-name "$TABLE_NAME" \
   --region "$REGION"
 
@@ -94,7 +102,7 @@ echo "✅  Table '$TABLE_NAME' is ready."
 echo ""
 
 # ---------- describe result ---------------------------------------------------
-aws dynamodb describe-table \
+$AWS_CMD dynamodb describe-table \
   --table-name "$TABLE_NAME" \
   --region "$REGION" \
   --query "Table.{Status:TableStatus, ItemCount:ItemCount, GSI:GlobalSecondaryIndexes[*].{Name:IndexName,Status:IndexStatus}}" \

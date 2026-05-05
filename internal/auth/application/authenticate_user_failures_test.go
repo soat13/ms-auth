@@ -36,7 +36,7 @@ func TestAuthenticateUserExecuteFailures(t *testing.T) {
 		uc := application.NewAuthenticateUser(userReader, tokenService)
 
 		_, err := uc.Execute(ctx, application.AuthenticateInput{
-			Document: setupDoc("12345678909"),
+			Document: setupDoc("58457673009"),
 			Password: "anything",
 		})
 
@@ -63,7 +63,7 @@ func TestAuthenticateUserExecuteFailures(t *testing.T) {
 		uc := application.NewAuthenticateUser(userReader, tokenService)
 
 		_, err := uc.Execute(ctx, application.AuthenticateInput{
-			Document: setupDoc("12345678909"),
+			Document: setupDoc("58457673009"),
 			Password: "anything",
 		})
 
@@ -96,7 +96,7 @@ func TestAuthenticateUserExecuteFailures(t *testing.T) {
 		uc := application.NewAuthenticateUser(userReader, tokenService)
 
 		_, execErr := uc.Execute(ctx, application.AuthenticateInput{
-			Document: setupDoc("12345678909"),
+			Document: setupDoc("58457673009"),
 			Password: "wrong-password",
 		})
 
@@ -133,7 +133,7 @@ func TestAuthenticateUserExecuteFailures(t *testing.T) {
 		uc := application.NewAuthenticateUser(userReader, tokenService)
 
 		_, execErr := uc.Execute(ctx, application.AuthenticateInput{
-			Document: setupDoc("12345678909"),
+			Document: setupDoc("58457673009"),
 			Password: "valid-password",
 		})
 

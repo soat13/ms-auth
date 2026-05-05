@@ -60,16 +60,16 @@ func TestAuthenticate(t *testing.T) {
 			setup.TableName,
 			uuid.Nil,
 			"John Mechanic",
-			"85891302071",
+			"58457673009",
 			"11987654321",
 			"mechanic@example.com",
-			"password123",
+			"TestPass123!",
 			[]string{"mechanic"},
 		)
 
 		payload := authenticateBody{
-			CPF:      "85891302071",
-			Password: "password123",
+			CPF:      "58457673009",
+			Password: "TestPass123!",
 		}
 
 		resp := postAuthenticate(t, setup.FiberApp, payload)
@@ -173,7 +173,7 @@ func TestAuthenticate(t *testing.T) {
 		setup := ensureSetup(t)
 
 		payload := authenticateBody{
-			CPF:      "85891302071",
+			CPF:      "58457673009",
 			Password: "",
 		}
 

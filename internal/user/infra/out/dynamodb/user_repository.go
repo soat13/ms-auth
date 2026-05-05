@@ -34,14 +34,24 @@ type userModel struct {
 	UpdatedAt    string   `dynamodbav:"updated_at"`
 }
 
+// DynamoDBAPI defines the subset of the DynamoDB client API used by UserRepository.
+type DynamoDBAPI interface {
+	PutItem(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error)
+	UpdateItem(ctx context.Context, params *dynamodb.UpdateItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.UpdateItemOutput, error)
+	DeleteItem(ctx context.Context, params *dynamodb.DeleteItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.DeleteItemOutput, error)
+	GetItem(ctx context.Context, params *dynamodb.GetItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error)
+	Query(ctx context.Context, params *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error)
+	Scan(ctx context.Context, params *dynamodb.ScanInput, optFns ...func(*dynamodb.Options)) (*dynamodb.ScanOutput, error)
+}
+
 type UserRepository struct {
-	client        *dynamodb.Client
+	client        DynamoDBAPI
 	tableName     string
 	emailIndex    string
 	documentIndex string
 }
 
-func NewUserRepository(client *dynamodb.Client, tableName, emailIndex, documentIndex string) application.Repository {
+func NewUserRepository(client DynamoDBAPI, tableName, emailIndex, documentIndex string) application.Repository {
 	return &UserRepository{
 		client:        client,
 		tableName:     tableName,

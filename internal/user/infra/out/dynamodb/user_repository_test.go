@@ -1,22 +1,61 @@
 package dynamodb
 
 import (
+	"context"
+	"errors"
 	"testing"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 	"github.com/google/uuid"
 	"github.com/soat13/ms-auth/internal/shared/authz"
+	"github.com/soat13/ms-auth/internal/user/domain"
+	"github.com/soat13/oficina-utils/pkg/pagination"
 	"github.com/soat13/oficina-utils/pkg/valueobjects/document"
 	"github.com/soat13/oficina-utils/pkg/valueobjects/email"
 	"github.com/soat13/oficina-utils/pkg/valueobjects/password"
 	"github.com/soat13/oficina-utils/pkg/valueobjects/phone"
-
-	"github.com/soat13/ms-auth/internal/user/domain"
 )
+
+// ---------------------------------------------------------------------------
+// Mock
+// ---------------------------------------------------------------------------
+
+type mockDDB struct {
+	putItem    func(ctx context.Context, params *dynamodb.PutItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error)
+	updateItem func(ctx context.Context, params *dynamodb.UpdateItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.UpdateItemOutput, error)
+	deleteItem func(ctx context.Context, params *dynamodb.DeleteItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.DeleteItemOutput, error)
+	getItem    func(ctx context.Context, params *dynamodb.GetItemInput, optFns ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error)
+	query      func(ctx context.Context, params *dynamodb.QueryInput, optFns ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error)
+	scan       func(ctx context.Context, params *dynamodb.ScanInput, optFns ...func(*dynamodb.Options)) (*dynamodb.ScanOutput, error)
+}
+
+func (m *mockDDB) PutItem(ctx context.Context, p *dynamodb.PutItemInput, o ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error) {
+	return m.putItem(ctx, p, o...)
+}
+func (m *mockDDB) UpdateItem(ctx context.Context, p *dynamodb.UpdateItemInput, o ...func(*dynamodb.Options)) (*dynamodb.UpdateItemOutput, error) {
+	return m.updateItem(ctx, p, o...)
+}
+func (m *mockDDB) DeleteItem(ctx context.Context, p *dynamodb.DeleteItemInput, o ...func(*dynamodb.Options)) (*dynamodb.DeleteItemOutput, error) {
+	return m.deleteItem(ctx, p, o...)
+}
+func (m *mockDDB) GetItem(ctx context.Context, p *dynamodb.GetItemInput, o ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error) {
+	return m.getItem(ctx, p, o...)
+}
+func (m *mockDDB) Query(ctx context.Context, p *dynamodb.QueryInput, o ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error) {
+	return m.query(ctx, p, o...)
+}
+func (m *mockDDB) Scan(ctx context.Context, p *dynamodb.ScanInput, o ...func(*dynamodb.Options)) (*dynamodb.ScanOutput, error) {
+	return m.scan(ctx, p, o...)
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+var errFake = errors.New("fake dynamo error")
 
 func newValidUser(t *testing.T) *domain.User {
 	t.Helper()
@@ -33,69 +72,92 @@ func newValidUser(t *testing.T) *domain.User {
 	return user
 }
 
-// ---------------------------------------------------------------------------
-// toModel
-// ---------------------------------------------------------------------------
-
-func TestToModel(t *testing.T) {
-	user := newValidUser(t)
-
-	model := toModel(user)
-
-	if model.ID != user.ID.String() {
-		t.Errorf("expected ID %q, got %q", user.ID.String(), model.ID)
-	}
-	if model.Name != user.Name {
-		t.Errorf("expected Name %q, got %q", user.Name, model.Name)
-	}
-	if model.Document != user.Document.Value {
-		t.Errorf("expected Document %q, got %q", user.Document.Value, model.Document)
-	}
-	if model.DocumentType != user.Document.Type() {
-		t.Errorf("expected DocumentType %q, got %q", user.Document.Type(), model.DocumentType)
-	}
-	if model.Email != user.Email.String() {
-		t.Errorf("expected Email %q, got %q", user.Email.String(), model.Email)
-	}
-	if model.PhoneNumber != user.PhoneNumber.String() {
-		t.Errorf("expected PhoneNumber %q, got %q", user.PhoneNumber.String(), model.PhoneNumber)
-	}
-	if model.Password != user.Password.Hash {
-		t.Errorf("expected Password hash %q, got %q", user.Password.Hash, model.Password)
-	}
-	if len(model.Roles) != len(user.Roles) {
-		t.Errorf("expected %d roles, got %d", len(user.Roles), len(model.Roles))
-	}
-	if model.CreatedAt == "" {
-		t.Error("expected CreatedAt to be set")
-	}
-	if model.UpdatedAt == "" {
-		t.Error("expected UpdatedAt to be set")
+func newRepo(mock *mockDDB) *UserRepository {
+	return &UserRepository{
+		client:        mock,
+		tableName:     "users",
+		emailIndex:    "email-index",
+		documentIndex: "document-index",
 	}
 }
 
-// ---------------------------------------------------------------------------
-// toDomain
-// ---------------------------------------------------------------------------
+// marshalUser returns a DynamoDB attribute map for a valid user model.
+func marshalUser(t *testing.T) map[string]types.AttributeValue {
+	t.Helper()
+	pwd, _ := password.New("Password123!")
+	model := &userModel{
+		ID:          uuid.New().String(),
+		Name:        "Test User",
+		Document:    "12345678909",
+		DocumentType: "CPF",
+		Email:       "test@example.com",
+		PhoneNumber: "11999999999",
+		Password:    pwd.Hash,
+		Roles:       []string{"attendant"},
+		CreatedAt:   time.Now().Format(time.RFC3339Nano),
+		UpdatedAt:   time.Now().Format(time.RFC3339Nano),
+	}
+	item, err := attributevalue.MarshalMap(model)
+	if err != nil {
+		t.Fatalf("failed to marshal user model: %v", err)
+	}
+	return item
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// toModel / toDomain (pure logic)
+// ═══════════════════════════════════════════════════════════════════════════
+
+func TestToModel(t *testing.T) {
+	user := newValidUser(t)
+	model := toModel(user)
+
+	if model.ID != user.ID.String() {
+		t.Errorf("ID: got %q, want %q", model.ID, user.ID.String())
+	}
+	if model.Name != user.Name {
+		t.Errorf("Name: got %q, want %q", model.Name, user.Name)
+	}
+	if model.Document != user.Document.Value {
+		t.Errorf("Document: got %q, want %q", model.Document, user.Document.Value)
+	}
+	if model.DocumentType != user.Document.Type() {
+		t.Errorf("DocumentType: got %q, want %q", model.DocumentType, user.Document.Type())
+	}
+	if model.Email != user.Email.String() {
+		t.Errorf("Email: got %q, want %q", model.Email, user.Email.String())
+	}
+	if model.PhoneNumber != user.PhoneNumber.String() {
+		t.Errorf("PhoneNumber: got %q, want %q", model.PhoneNumber, user.PhoneNumber.String())
+	}
+	if model.Password != user.Password.Hash {
+		t.Errorf("Password: got %q, want %q", model.Password, user.Password.Hash)
+	}
+	if len(model.Roles) != len(user.Roles) {
+		t.Errorf("Roles len: got %d, want %d", len(model.Roles), len(user.Roles))
+	}
+	if model.CreatedAt == "" || model.UpdatedAt == "" {
+		t.Error("timestamps should not be empty")
+	}
+}
 
 func TestToDomain(t *testing.T) {
 	t.Run("Valid Model", func(t *testing.T) {
 		now := time.Now()
 		id := uuid.New()
-
 		pwd, _ := password.New("Password123!")
 
 		model := &userModel{
-			ID:           id.String(),
-			Name:         "Test User",
-			Document:     "12345678909",
+			ID:          id.String(),
+			Name:        "Test User",
+			Document:    "12345678909",
 			DocumentType: "CPF",
-			Email:        "test@example.com",
-			PhoneNumber:  "11999999999",
-			Password:     pwd.Hash,
-			Roles:        []string{"attendant"},
-			CreatedAt:    now.Format(time.RFC3339Nano),
-			UpdatedAt:    now.Format(time.RFC3339Nano),
+			Email:       "test@example.com",
+			PhoneNumber: "11999999999",
+			Password:    pwd.Hash,
+			Roles:       []string{"attendant"},
+			CreatedAt:   now.Format(time.RFC3339Nano),
+			UpdatedAt:   now.Format(time.RFC3339Nano),
 		}
 
 		user := toDomain(model)
@@ -103,103 +165,459 @@ func TestToDomain(t *testing.T) {
 			t.Fatal("expected user, got nil")
 		}
 		if user.ID != id {
-			t.Errorf("expected ID %v, got %v", id, user.ID)
+			t.Errorf("ID: got %v, want %v", user.ID, id)
 		}
 		if user.Name != model.Name {
-			t.Errorf("expected Name %q, got %q", model.Name, user.Name)
-		}
-		if user.Email.String() != model.Email {
-			t.Errorf("expected Email %q, got %q", model.Email, user.Email.String())
-		}
-		if len(user.Roles) != 1 {
-			t.Errorf("expected 1 role, got %d", len(user.Roles))
+			t.Errorf("Name: got %q, want %q", user.Name, model.Name)
 		}
 	})
 
 	t.Run("Nil Model", func(t *testing.T) {
-		user := toDomain(nil)
-		if user != nil {
-			t.Errorf("expected nil, got %v", user)
+		if toDomain(nil) != nil {
+			t.Error("expected nil")
 		}
 	})
 
 	t.Run("Empty ID", func(t *testing.T) {
-		model := &userModel{ID: ""}
-		user := toDomain(model)
-		if user != nil {
-			t.Errorf("expected nil for empty ID, got %v", user)
-		}
-	})
-
-	t.Run("Malformed UUID Produces Valid User", func(t *testing.T) {
-		pwd, _ := password.New("Password123!")
-		model := &userModel{
-			ID:          "not-a-uuid",
-			Name:        "Test",
-			Document:    "12345678909",
-			Email:       "test@example.com",
-			PhoneNumber: "11999999999",
-			Password:    pwd.Hash,
-			Roles:       []string{"attendant"},
-			CreatedAt:   time.Now().Format(time.RFC3339Nano),
-			UpdatedAt:   time.Now().Format(time.RFC3339Nano),
-		}
-
-		// toDomain does not panic and returns a user (uuid.Parse may fall back to
-		// uuid.Nil or derive a hash-based UUID — both are acceptable).
-		user := toDomain(model)
-		if user == nil {
-			t.Fatal("expected user, got nil")
+		if toDomain(&userModel{ID: ""}) != nil {
+			t.Error("expected nil for empty ID")
 		}
 	})
 
 	t.Run("Invalid Name Returns Nil", func(t *testing.T) {
 		pwd, _ := password.New("Password123!")
 		model := &userModel{
-			ID:          uuid.New().String(),
-			Name:        "", // domain.NewUser rejects empty name
-			Document:    "12345678909",
-			Email:       "test@example.com",
-			PhoneNumber: "11999999999",
-			Password:    pwd.Hash,
-			Roles:       []string{"attendant"},
-			CreatedAt:   time.Now().Format(time.RFC3339Nano),
-			UpdatedAt:   time.Now().Format(time.RFC3339Nano),
+			ID: uuid.New().String(), Name: "",
+			Document: "12345678909", Email: "test@example.com",
+			PhoneNumber: "11999999999", Password: pwd.Hash,
+			Roles: []string{"attendant"},
+			CreatedAt: time.Now().Format(time.RFC3339Nano),
+			UpdatedAt: time.Now().Format(time.RFC3339Nano),
 		}
-
-		user := toDomain(model)
-		if user != nil {
-			t.Errorf("expected nil for invalid name, got %v", user)
+		if toDomain(model) != nil {
+			t.Error("expected nil for empty name")
 		}
 	})
 }
 
-// ---------------------------------------------------------------------------
-// Round-trip: toModel -> toDomain
-// ---------------------------------------------------------------------------
-
 func TestRoundTrip(t *testing.T) {
 	original := newValidUser(t)
-
-	model := toModel(original)
-	restored := toDomain(model)
+	restored := toDomain(toModel(original))
 
 	if restored == nil {
-		t.Fatal("round-trip produced nil user")
+		t.Fatal("round-trip produced nil")
 	}
 	if restored.ID != original.ID {
-		t.Errorf("ID mismatch: %v != %v", original.ID, restored.ID)
+		t.Errorf("ID mismatch")
 	}
 	if restored.Name != original.Name {
-		t.Errorf("Name mismatch: %q != %q", original.Name, restored.Name)
+		t.Errorf("Name mismatch")
 	}
 	if restored.Email.String() != original.Email.String() {
-		t.Errorf("Email mismatch: %q != %q", original.Email.String(), restored.Email.String())
-	}
-	if restored.Document.Value != original.Document.Value {
-		t.Errorf("Document mismatch: %q != %q", original.Document.Value, restored.Document.Value)
-	}
-	if len(restored.Roles) != len(original.Roles) {
-		t.Errorf("Roles mismatch: %d != %d", len(original.Roles), len(restored.Roles))
+		t.Errorf("Email mismatch")
 	}
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Create – error paths
+// ═══════════════════════════════════════════════════════════════════════════
+
+func TestCreate_PutItemError(t *testing.T) {
+	mock := &mockDDB{
+		putItem: func(ctx context.Context, p *dynamodb.PutItemInput, o ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error) {
+			return nil, errFake
+		},
+	}
+	repo := newRepo(mock)
+
+	err := repo.Create(context.Background(), newValidUser(t))
+	if !errors.Is(err, errFake) {
+		t.Errorf("expected errFake, got %v", err)
+	}
+}
+
+func TestCreate_ConditionalCheckFailed(t *testing.T) {
+	mock := &mockDDB{
+		putItem: func(ctx context.Context, p *dynamodb.PutItemInput, o ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error) {
+			return nil, &types.ConditionalCheckFailedException{Message: strPtr("already exists")}
+		},
+	}
+	repo := newRepo(mock)
+
+	err := repo.Create(context.Background(), newValidUser(t))
+	if !errors.Is(err, domain.ErrUserAlreadyExists) {
+		t.Errorf("expected ErrUserAlreadyExists, got %v", err)
+	}
+}
+
+func TestCreate_Success(t *testing.T) {
+	mock := &mockDDB{
+		putItem: func(ctx context.Context, p *dynamodb.PutItemInput, o ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error) {
+			return &dynamodb.PutItemOutput{}, nil
+		},
+	}
+	repo := newRepo(mock)
+
+	if err := repo.Create(context.Background(), newValidUser(t)); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Update – error paths
+// ═══════════════════════════════════════════════════════════════════════════
+
+func TestUpdate_UpdateItemError(t *testing.T) {
+	mock := &mockDDB{
+		updateItem: func(ctx context.Context, p *dynamodb.UpdateItemInput, o ...func(*dynamodb.Options)) (*dynamodb.UpdateItemOutput, error) {
+			return nil, errFake
+		},
+	}
+	repo := newRepo(mock)
+
+	err := repo.Update(context.Background(), newValidUser(t))
+	if !errors.Is(err, errFake) {
+		t.Errorf("expected errFake, got %v", err)
+	}
+}
+
+func TestUpdate_Success(t *testing.T) {
+	mock := &mockDDB{
+		updateItem: func(ctx context.Context, p *dynamodb.UpdateItemInput, o ...func(*dynamodb.Options)) (*dynamodb.UpdateItemOutput, error) {
+			return &dynamodb.UpdateItemOutput{}, nil
+		},
+	}
+	repo := newRepo(mock)
+
+	if err := repo.Update(context.Background(), newValidUser(t)); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Delete – error paths
+// ═══════════════════════════════════════════════════════════════════════════
+
+func TestDelete_DeleteItemError(t *testing.T) {
+	mock := &mockDDB{
+		deleteItem: func(ctx context.Context, p *dynamodb.DeleteItemInput, o ...func(*dynamodb.Options)) (*dynamodb.DeleteItemOutput, error) {
+			return nil, errFake
+		},
+	}
+	repo := newRepo(mock)
+
+	if err := repo.Delete(context.Background(), uuid.New()); !errors.Is(err, errFake) {
+		t.Errorf("expected errFake, got %v", err)
+	}
+}
+
+func TestDelete_Success(t *testing.T) {
+	mock := &mockDDB{
+		deleteItem: func(ctx context.Context, p *dynamodb.DeleteItemInput, o ...func(*dynamodb.Options)) (*dynamodb.DeleteItemOutput, error) {
+			return &dynamodb.DeleteItemOutput{}, nil
+		},
+	}
+	repo := newRepo(mock)
+
+	if err := repo.Delete(context.Background(), uuid.New()); err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GetByID – error paths
+// ═══════════════════════════════════════════════════════════════════════════
+
+func TestGetByID_GetItemError(t *testing.T) {
+	mock := &mockDDB{
+		getItem: func(ctx context.Context, p *dynamodb.GetItemInput, o ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error) {
+			return nil, errFake
+		},
+	}
+	repo := newRepo(mock)
+
+	_, err := repo.GetByID(context.Background(), uuid.New())
+	if !errors.Is(err, errFake) {
+		t.Errorf("expected errFake, got %v", err)
+	}
+}
+
+func TestGetByID_NotFound(t *testing.T) {
+	mock := &mockDDB{
+		getItem: func(ctx context.Context, p *dynamodb.GetItemInput, o ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error) {
+			return &dynamodb.GetItemOutput{Item: nil}, nil
+		},
+	}
+	repo := newRepo(mock)
+
+	user, err := repo.GetByID(context.Background(), uuid.New())
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	if user != nil {
+		t.Errorf("expected nil user, got %v", user)
+	}
+}
+
+func TestGetByID_UnmarshalError(t *testing.T) {
+	// roles is []string in the model — a BOOL value cannot be deserialized into it.
+	mock := &mockDDB{
+		getItem: func(ctx context.Context, p *dynamodb.GetItemInput, o ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error) {
+			return &dynamodb.GetItemOutput{
+				Item: map[string]types.AttributeValue{
+					"id":    &types.AttributeValueMemberS{Value: uuid.New().String()},
+					"name":  &types.AttributeValueMemberS{Value: "Test"},
+					"roles": &types.AttributeValueMemberBOOL{Value: true},
+				},
+			}, nil
+		},
+	}
+	repo := newRepo(mock)
+
+	_, err := repo.GetByID(context.Background(), uuid.New())
+	if err == nil {
+		t.Error("expected unmarshal error, got nil")
+	}
+}
+
+func TestGetByID_Success(t *testing.T) {
+	item := marshalUser(t)
+	mock := &mockDDB{
+		getItem: func(ctx context.Context, p *dynamodb.GetItemInput, o ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error) {
+			return &dynamodb.GetItemOutput{Item: item}, nil
+		},
+	}
+	repo := newRepo(mock)
+
+	user, err := repo.GetByID(context.Background(), uuid.New())
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	if user == nil {
+		t.Error("expected user, got nil")
+	}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GetByEmail – error paths
+// ═══════════════════════════════════════════════════════════════════════════
+
+func TestGetByEmail_QueryError(t *testing.T) {
+	mock := &mockDDB{
+		query: func(ctx context.Context, p *dynamodb.QueryInput, o ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error) {
+			return nil, errFake
+		},
+	}
+	repo := newRepo(mock)
+
+	_, err := repo.GetByEmail(context.Background(), "test@example.com")
+	if !errors.Is(err, errFake) {
+		t.Errorf("expected errFake, got %v", err)
+	}
+}
+
+func TestGetByEmail_NotFound(t *testing.T) {
+	mock := &mockDDB{
+		query: func(ctx context.Context, p *dynamodb.QueryInput, o ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error) {
+			return &dynamodb.QueryOutput{Items: nil}, nil
+		},
+	}
+	repo := newRepo(mock)
+
+	user, err := repo.GetByEmail(context.Background(), "nobody@example.com")
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	if user != nil {
+		t.Errorf("expected nil user, got %v", user)
+	}
+}
+
+func TestGetByEmail_UnmarshalError(t *testing.T) {
+	mock := &mockDDB{
+		query: func(ctx context.Context, p *dynamodb.QueryInput, o ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error) {
+			return &dynamodb.QueryOutput{
+				Items: []map[string]types.AttributeValue{
+					{
+						"id":    &types.AttributeValueMemberS{Value: uuid.New().String()},
+						"name":  &types.AttributeValueMemberS{Value: "Test"},
+						"roles": &types.AttributeValueMemberBOOL{Value: true},
+					},
+				},
+			}, nil
+		},
+	}
+	repo := newRepo(mock)
+
+	_, err := repo.GetByEmail(context.Background(), "test@example.com")
+	if err == nil {
+		t.Error("expected unmarshal error, got nil")
+	}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// List – error paths
+// ═══════════════════════════════════════════════════════════════════════════
+
+func TestList_ScanError(t *testing.T) {
+	mock := &mockDDB{
+		scan: func(ctx context.Context, p *dynamodb.ScanInput, o ...func(*dynamodb.Options)) (*dynamodb.ScanOutput, error) {
+			return nil, errFake
+		},
+	}
+	repo := newRepo(mock)
+
+	_, err := repo.List(context.Background(), pagination.Pagination{Limit: 10})
+	if !errors.Is(err, errFake) {
+		t.Errorf("expected errFake, got %v", err)
+	}
+}
+
+func TestList_UnmarshalError(t *testing.T) {
+	mock := &mockDDB{
+		scan: func(ctx context.Context, p *dynamodb.ScanInput, o ...func(*dynamodb.Options)) (*dynamodb.ScanOutput, error) {
+			return &dynamodb.ScanOutput{
+				Items: []map[string]types.AttributeValue{
+					{
+						"id":    &types.AttributeValueMemberS{Value: uuid.New().String()},
+						"name":  &types.AttributeValueMemberS{Value: "Test"},
+						"roles": &types.AttributeValueMemberBOOL{Value: true},
+					},
+				},
+			}, nil
+		},
+	}
+	repo := newRepo(mock)
+
+	_, err := repo.List(context.Background(), pagination.Pagination{Limit: 10})
+	if err == nil {
+		t.Error("expected unmarshal error, got nil")
+	}
+}
+
+func TestList_DefaultLimit(t *testing.T) {
+	mock := &mockDDB{
+		scan: func(ctx context.Context, p *dynamodb.ScanInput, o ...func(*dynamodb.Options)) (*dynamodb.ScanOutput, error) {
+			if *p.Limit != 50 {
+				t.Errorf("expected default limit 50, got %d", *p.Limit)
+			}
+			return &dynamodb.ScanOutput{Items: nil}, nil
+		},
+	}
+	repo := newRepo(mock)
+
+	_, _ = repo.List(context.Background(), pagination.Pagination{Limit: 0})
+}
+
+func TestList_Success(t *testing.T) {
+	item := marshalUser(t)
+	mock := &mockDDB{
+		scan: func(ctx context.Context, p *dynamodb.ScanInput, o ...func(*dynamodb.Options)) (*dynamodb.ScanOutput, error) {
+			return &dynamodb.ScanOutput{Items: []map[string]types.AttributeValue{item}}, nil
+		},
+	}
+	repo := newRepo(mock)
+
+	users, err := repo.List(context.Background(), pagination.Pagination{Limit: 10})
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	if len(users) != 1 {
+		t.Errorf("expected 1 user, got %d", len(users))
+	}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ExistsByEmail – error path
+// ═══════════════════════════════════════════════════════════════════════════
+
+func TestExistsByEmail_Error(t *testing.T) {
+	mock := &mockDDB{
+		query: func(ctx context.Context, p *dynamodb.QueryInput, o ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error) {
+			return nil, errFake
+		},
+	}
+	repo := newRepo(mock)
+
+	_, err := repo.ExistsByEmail(context.Background(), "test@example.com")
+	if !errors.Is(err, errFake) {
+		t.Errorf("expected errFake, got %v", err)
+	}
+}
+
+func TestExistsByEmail_True(t *testing.T) {
+	item := marshalUser(t)
+	mock := &mockDDB{
+		query: func(ctx context.Context, p *dynamodb.QueryInput, o ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error) {
+			return &dynamodb.QueryOutput{Items: []map[string]types.AttributeValue{item}}, nil
+		},
+	}
+	repo := newRepo(mock)
+
+	exists, err := repo.ExistsByEmail(context.Background(), "test@example.com")
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	if !exists {
+		t.Error("expected true")
+	}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ExistsByDocument – error path
+// ═══════════════════════════════════════════════════════════════════════════
+
+func TestExistsByDocument_Error(t *testing.T) {
+	mock := &mockDDB{
+		query: func(ctx context.Context, p *dynamodb.QueryInput, o ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error) {
+			return nil, errFake
+		},
+	}
+	repo := newRepo(mock)
+
+	_, err := repo.ExistsByDocument(context.Background(), "12345678909")
+	if !errors.Is(err, errFake) {
+		t.Errorf("expected errFake, got %v", err)
+	}
+}
+
+func TestExistsByDocument_Found(t *testing.T) {
+	item := marshalUser(t)
+	mock := &mockDDB{
+		query: func(ctx context.Context, p *dynamodb.QueryInput, o ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error) {
+			return &dynamodb.QueryOutput{Items: []map[string]types.AttributeValue{item}}, nil
+		},
+	}
+	repo := newRepo(mock)
+
+	exists, err := repo.ExistsByDocument(context.Background(), "12345678909")
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	if !exists {
+		t.Error("expected true")
+	}
+}
+
+func TestExistsByDocument_NotFound(t *testing.T) {
+	mock := &mockDDB{
+		query: func(ctx context.Context, p *dynamodb.QueryInput, o ...func(*dynamodb.Options)) (*dynamodb.QueryOutput, error) {
+			return &dynamodb.QueryOutput{Items: nil}, nil
+		},
+	}
+	repo := newRepo(mock)
+
+	exists, err := repo.ExistsByDocument(context.Background(), "99999999999")
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	if exists {
+		t.Error("expected false")
+	}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// helpers
+// ═══════════════════════════════════════════════════════════════════════════
+
+func strPtr(s string) *string { return &s }

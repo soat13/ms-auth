@@ -153,3 +153,7 @@ A aplicação é deployada automaticamente no **Amazon EKS** através do pipelin
 - **services.yaml** — Service do tipo LoadBalancer expondo a aplicação externamente na porta 3000
 - **hpa.yaml** — Horizontal Pod Autoscaler configurado para escalar de 1 a 10 réplicas baseado em CPU (target: 50%)
 - **metric-server.yaml** — Metrics Server necessário para o HPA funcionar corretamente
+
+## Last Sonar Overview:
+<img width="1386" height="591" alt="image" src="https://github.com/user-attachments/assets/17cfdd1b-ffa3-4bd7-8ec6-35ad39a61a7f" />
+

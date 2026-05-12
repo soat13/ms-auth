@@ -139,9 +139,6 @@ A API utiliza **JWT** para proteger as rotas administrativas (`/admin/**`).
 
 > Os testes de integração utilizam o DynamoDB Local com a flag `-sharedDb` para garantir consistência de dados entre os diferentes Access Keys.
 
-## Last Sonar Overview:
-![](sonar-analise.png)
-
 ## Deploy no Kubernetes
 
 A aplicação é deployada automaticamente no **Amazon EKS** através do pipeline CI/CD. Os manifests Kubernetes estão localizados em `deploy/k8s/`:
